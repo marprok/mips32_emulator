@@ -2,24 +2,45 @@
 #include "mips32.h"
 #include <unistd.h>
 
-void emulate()
+/* The function that starts the emulation. */
+void emulate(void)
 {
 	while (pc < INST_MEM_SIZE)
 	{
 		printf("pc = %d\n", pc);
 		inst_fetch();
-		dump_regs();
+		//dump_regs();
 		sleep(1);
 	}
 }
 
-void inst_fetch()
+/* Print the contents of the register file.*/
+void dump_regs(void)
+{
+	uint32_t i;
+	for (i = 0; i < 32; ++i)
+		printf("reg_file[%d] = %d\n",i, reg_file[i]);
+}
+
+/* Each of the following funtions is mapped to 
+   one of the stages of a clock cycle.
+   These stages are the fillowing:
+   INSTRUCTION FETCH
+   INSTRUCTION DECODE
+   INSTRUCTION EXECUTION
+   INSTRUCTION MEMORY ACCESS
+   REGISTER WRITE BACK
+*/
+
+/* The instruction fetch stage. */
+void inst_fetch(void)
 {
 	word inst = *((word*)(inst_mem + pc));
 	pc += 4;
 	inst_decode(inst);
 }
 
+/* The instruction decode stage. */
 void inst_decode(word inst)
 {
 	opcode = inst >> 26;
@@ -49,6 +70,7 @@ void inst_decode(word inst)
 	}
 }
 
+/* The instruction execution stage. */
 void inst_execute(byte ALUop)
 {
 	word result = 0;
@@ -63,9 +85,7 @@ void inst_execute(byte ALUop)
 		if (!result)
 		{
 			pc += immediate << 2;
-			printf("beq: %d\n", result);
 		}
-		printf("here\n");
 	}else if (ALUop & 0x02)
 	{
 		switch (funct)
@@ -95,21 +115,14 @@ void inst_execute(byte ALUop)
 	}
 }
 
-void inst_mem_access()
+/* The memory access stage. */
+void inst_mem_access(void)
 {
 	
 }
 
+/* The register write back stage. */
 void inst_write_back(word result)
 {
 	reg_file[rd] = result;
 }
-
-void dump_regs()
-{
-	uint32_t i;
-	for (i = 0; i < 32; ++i)
-		printf("reg_file[%d] = %d\n",i, reg_file[i]);
-}
-
-
