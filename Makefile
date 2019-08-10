@@ -1,9 +1,11 @@
 CC=gcc
 CFLAGS=-Wall -Wextra -pedantic -std=c99
 
-mips32: main.o
-	$(CC) -o mips32 main.o
-main.o: main.c
+main: main.o mips32.o
+	$(CC) -o main main.o mips32.o
+main.o: main.c 
 	$(CC) $(CFLAGS) -c main.c
+mips32.o: mips32.c mips32.h
+	$(CC) $(CFLAGS) -c mips32.c
 clean:
-	rm *.o mips32
+	rm *.o main
