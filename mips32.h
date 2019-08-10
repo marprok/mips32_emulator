@@ -23,7 +23,7 @@ byte funct;
 void emulate();
 void inst_fetch();
 void inst_decode(word inst);
-void inst_execute();
+void inst_execute(byte ALUop);
 void inst_mem_acces();
 void inst_write_back(word result);
 void decode_R();

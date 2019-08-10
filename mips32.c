@@ -31,21 +31,44 @@ void inst_decode(word inst)
 	}
 }
 
-void inst_execute()
+void inst_execute(byte ALUop)
 {
 	word result = 0;
 	word reg1 = reg_file[rs];
 	word reg2 = reg_file[rt];
-	switch (funct)
+	if (!ALUop)
 	{
-	case 0x20:
-		result = reg1 + reg2;
+		/* TODO memory access */
+	}else if (ALUop & 0x01)
+	{
+		/*TODO substract for branch */
+	}else if (ALUop & 0x02)
+	{
+		switch (funct)
+		{
+		case 0x20:
+			result = reg1 + reg2;
+			break;
+		case 0x22:
+			result = reg1 - reg2;
+			break;
+		case 0x24:
+			result = reg1 & reg2;
+			break;
+		case 0x25:
+			result = reg1 | reg2;
+			break;
+		case 0x27:
+			result = ~(reg1 | reg2);
+			break;
+		case 0x2A:
+			result = reg1 < reg2 ? 1 : 0;
+			break;
+		default:
+			printf("Invalid ALU operation code: %d\n", funct);
+		}
 		inst_write_back(result);
-		break;
-	default:
-		printf("Invalid ALU operation code: %d\n", funct);
 	}
-	
 }
 
 void inst_mem_access()
@@ -72,12 +95,13 @@ void decode_R(word inst)
 		   "shampt = %d\n"
 		   "funct = %d\n",
 		   rs, rt, rd, shamt, funct);
-	inst_execute(funct, reg_file[rs], reg_file[rt]);	
+	inst_execute(0x02);	
 }
-
 void dump_regs()
 {
 	uint32_t i;
 	for (i = 0; i < 32; ++i)
 		printf("reg_file[%d] = %d\n",i, reg_file[i]);
 }
+
+
