@@ -9,7 +9,7 @@ void emulate(void)
 	{
 		printf("pc = %d\n", pc);
 		inst_fetch();
-		//dump_regs();
+		dump_regs();
 		sleep(1);
 	}
 }
