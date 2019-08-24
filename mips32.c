@@ -19,7 +19,13 @@ void dump_regs(void)
 {
 	uint32_t i;
 	for (i = 0; i < 32; ++i)
-		printf("reg_file[%d] = %d\n",i, reg_file[i]);
+	{
+		if (i % 4 == 0)
+			printf("%d-%d:\t", i,i+3);
+		printf("0x%X ",reg_file[i]);
+		if ((i + 1) % 4 == 0)
+			printf("\n");
+	}
 }
 
 /* Each of the following funtions is mapped to 
