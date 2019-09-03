@@ -35,11 +35,7 @@ static int tokenize(char *str, char delim, char*** tokens)
     if (tokens)
     {
 	if (*tokens)
-	{
 	    free(*tokens);
-	    printf("not NULL\n");
-	}
-	printf("NULL\n");
 	*tokens = (char**)malloc(count*sizeof(char*));
     }else
     {
