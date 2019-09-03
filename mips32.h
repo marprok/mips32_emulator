@@ -22,6 +22,7 @@ byte funct;
 half_word immediate;
 
 void emulate(void);
+byte ALU_control_unit(byte funct, byte ALUOp);
 void inst_fetch(void);
 void inst_decode(word inst);
 void inst_execute(byte ALUop);

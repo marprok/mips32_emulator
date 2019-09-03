@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include "mips32.h"
 #include <unistd.h>
+#include <stdlib.h>
 
 /*
   A single cycled implementation of a MIPS CPU.
@@ -9,6 +10,45 @@
   of the Patterson, Hennessy book of Computer Architecture.
 */
 
+byte ALU_control_unit(byte funct, byte ALUOp)
+{
+    byte out_signal = 0;
+    if (!ALUOp)
+    {
+	/* TODO memory access */
+	out_signal = 0x2;
+    }else if (ALUOp & 0x01)
+    {
+	out_signal = 0x6;
+    }else if (ALUOp & 0x02)
+    {
+	switch (funct)
+	{
+	case 0x20:
+	    out_signal = 0x2;
+	    break;
+	case 0x22:
+	    out_signal = 0x6;
+	    break;
+	case 0x24:
+	    out_signal = 0x0;
+	    break;
+	case 0x25:
+	    out_signal = 0x1;
+	    break;
+	case 0x27:
+	    out_signal = 0xC;
+	    break;
+	case 0x2A:
+	    out_signal = 0x7;
+	    break;
+	default:
+	    printf("Invalid ALU operation code: %d\n", funct);
+	    exit(1);
+	}
+    }
+    return out_signal;
+}
 
 /* The function that starts the emulation. */
 void emulate(void)
@@ -91,47 +131,46 @@ void inst_decode(word inst)
    The instruction execution stage.
    ALUOp: Patterson, Hennessy chapter 4, page 375
 */
-void inst_execute(byte ALUop)
+void inst_execute(byte ALUOp)
 {
     word result = 0;
     word reg1 = reg_file[rs];
     word reg2 = reg_file[rt];
-    if (!ALUop)
+
+    switch (ALU_control_unit(funct, ALUOp))
     {
-	/* TODO memory access */
-    }else if (ALUop & 0x01)
-    {
+    case 0x2: // add
+	result = reg1 + reg2;
+	break;
+    case 0x6: // sub
 	result = reg1 - reg2;
+	break;
+    case 0x0: // and
+	result = reg1 & reg2;
+	break;
+    case 0x1: // or
+	result = reg1 | reg2;
+	break;
+    case 0x7: // slt
+	result = reg1 < reg2 ? 1 : 0;
+	break;
+    }
+
+    switch (ALUOp)
+    {
+    case 0x0:
+	/* TODO memory access */
+	break;
+    case 0x1:
+	/* If it is a branch instruction. */
 	if (!result)
 	{
 	    pc += immediate << 2;
 	}
-    }else if (ALUop & 0x02)
-    {
-	switch (funct)
-	{
-	case 0x20:
-	    result = reg1 + reg2;
-	    break;
-	case 0x22:
-	    result = reg1 - reg2;
-	    break;
-	case 0x24:
-	    result = reg1 & reg2;
-	    break;
-	case 0x25:
-	    result = reg1 | reg2;
-	    break;
-	case 0x27:
-	    result = ~(reg1 | reg2);
-	    break;
-	case 0x2A:
-	    result = reg1 < reg2 ? 1 : 0;
-	    break;
-	default:
-	    printf("Invalid ALU operation code: %d\n", funct);
-	}
+	break;
+    case 0x2:
 	inst_write_back(result);
+	break;
     }
 }
 
