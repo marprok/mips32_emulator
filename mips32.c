@@ -2,6 +2,14 @@
 #include "mips32.h"
 #include <unistd.h>
 
+/*
+  A single cycled implementation of a MIPS CPU.
+  All the implementation is based on the single cycled
+  architecture that is presented in chapter 4
+  of the Patterson, Hennessy book of Computer Architecture.
+*/
+
+
 /* The function that starts the emulation. */
 void emulate(void)
 {
@@ -79,7 +87,10 @@ void inst_decode(word inst)
     }
 }
 
-/* The instruction execution stage. */
+/*
+   The instruction execution stage.
+   ALUOp: Patterson, Hennessy chapter 4, page 375
+*/
 void inst_execute(byte ALUop)
 {
     word result = 0;
