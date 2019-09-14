@@ -10,4 +10,4 @@ mips32.o: mips32.c mips32.h
 assembler: assembler.c
 	$(CC) $(CFLAGS) assembler.c -o assembler
 clean:
-	rm *.o main
+	rm *.o main assembler
