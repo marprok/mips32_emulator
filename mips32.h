@@ -42,7 +42,7 @@ byte ALU_control_unit();
 void inst_fetch(void);
 void inst_decode(word inst);
 void inst_execute();
-void inst_mem_acces(void);
+void inst_mem_access(word result);
 void inst_write_back(word result);
 void dump_regs(void);
 

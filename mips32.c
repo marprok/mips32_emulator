@@ -12,58 +12,64 @@
 
 void control_unit()
 {
-	signals = 0x0;
-	switch (opcode)
-	{
-	case R:
-		signals |= RegDest;
-		signals |= RegWrite;
-		signals |= ALUOp1;
-		break;
-	case BEQ:
-		signals |= ALUOp0;
-		signals |= Branch;
-		break;
-	}
+    signals = 0x0;
+    switch (opcode)
+    {
+    case R:
+        signals |= RegDest;
+        signals |= RegWrite;
+        signals |= ALUOp1;
+        break;
+    case BEQ:
+        signals |= ALUOp0;
+        signals |= Branch;
+        break;
+    }
 }
 
 byte ALU_control_unit()
 {
-	byte ALUOp = signals & 0x3;
+    byte ALUOp = signals & 0x3;
     byte out_signal = 0;
     if (!ALUOp)
     {
-		/* TODO memory access */
-		out_signal = 0x2;
+        /* TODO memory access */
+        out_signal = 0x2;
     }else if (ALUOp & 0x01)
     {
-		out_signal = 0x6;
+        out_signal = 0x6;
     }else if (ALUOp & 0x02)
     {
-		switch (funct)
-		{
-		case 0x20:
-			out_signal = 0x2;
-			break;
-		case 0x22:
-			out_signal = 0x6;
-			break;
-		case 0x24:
-			out_signal = 0x0;
-			break;
-		case 0x25:
-			out_signal = 0x1;
-			break;
-		case 0x27:
-			out_signal = 0xC;
-			break;
-		case 0x2A:
-			out_signal = 0x7;
-			break;
-		default:
-			printf("Invalid ALU operation code: %d\n", funct);
-			exit(1);
-		}
+        switch (funct)
+        {
+            /* ADD */
+        case 0x20:
+            out_signal = 0x2;
+            break;
+            /* SUB */
+        case 0x22:
+            out_signal = 0x6;
+            break;
+            /* AND */
+        case 0x24:
+            out_signal = 0x0;
+            break;
+            /* OR */
+        case 0x25:
+            out_signal = 0x1;
+            break;
+            /* NOR */
+        case 0x27:
+            out_signal = 0xC;
+            break;
+            /* SLT */
+        case 0x2A:
+            out_signal = 0x7;
+            break;
+        default:
+            printf("Invalid ALU operation code: %d\n", funct);
+            exit(1);
+        }
     }
     return out_signal;
 }
@@ -76,10 +82,10 @@ void emulate(void)
     printf("\n\n");
     while (pc < INST_MEM_SIZE)
     {
-		printf("pc = %d\n", pc);
-		inst_fetch();
-		dump_regs();
-		sleep(1);
+        printf("pc = %d\n", pc);
+        inst_fetch();
+        dump_regs();
+        sleep(1);
     }
 }
 
@@ -89,11 +95,11 @@ void dump_regs(void)
     uint32_t i;
     for (i = 0; i < 32; ++i)
     {
-		if (i % 4 == 0)
-			printf("%d-%d:\t", i,i+3);
-		printf("0x%08X ",reg_file[i]);
-		if ((i + 1) % 4 == 0)
-			printf("\n");
+        if (i % 4 == 0)
+            printf("%d-%d:\t", i,i+3);
+        printf("0x%08X ",reg_file[i]);
+        if ((i + 1) % 4 == 0)
+            printf("\n");
     }
 }
 
@@ -126,15 +132,15 @@ void inst_decode(word inst)
     funct = inst & 0x3F;
     immediate = inst & 0xFFFF;
     printf("rs = %d\n"
-		   "rt = %d\n"
-		   "rd = %d\n"
-		   "shampt = %d\n"
-		   "funct = %d\n"
-		   "immediate = %d\n",
-		   rs, rt, rd, shamt, funct, immediate);
+           "rt = %d\n"
+           "rd = %d\n"
+           "shampt = %d\n"
+           "funct = %d\n"
+           "immediate = %d\n",
+           rs, rt, rd, shamt, funct, immediate);
 
-	control_unit();
-	inst_execute();
+    control_unit();
+    inst_execute();
 }
 
 /*
@@ -146,58 +152,60 @@ void inst_execute()
     word result = 0;
     word reg1 = reg_file[rs];
     word reg2;
-	if (signals & ALUSrc)
-		reg2 = immediate;
-	else
-		reg2 = reg_file[rt];
 
-	
+    if (signals & ALUSrc)
+        reg2 = immediate;
+    else
+        reg2 = reg_file[rt];
+
     switch (ALU_control_unit())
     {
-    case 0x2: // add
-		result = reg1 + reg2;
-		break;
-    case 0x6: // sub
-		result = reg1 - reg2;
-		break;
-    case 0x0: // and
-		result = reg1 & reg2;
-		break;
-    case 0x1: // or
-		result = reg1 | reg2;
-		break;
-    case 0x7: // slt
-		result = reg1 < reg2 ? 1 : 0;
-		break;
+    case 0x2:
+        result = reg1 + reg2;
+        break;
+    case 0x6:
+        result = reg1 - reg2;
+        break;
+    case 0x0:
+        result = reg1 & reg2;
+        break;
+    case 0x1:
+        result = reg1 | reg2;
+        break;
+    case 0x7:
+        result = reg1 < reg2 ? 1 : 0;
+        break;
+    case 0xC:
+        result = ~(reg1 | reg2);
+        break;
     }
-	/* This is bad code. */
-	if (!result && Branch & signals)
-	{
-		signals |= PCSrc;
-	}
 
-	if (signals & PCSrc)
-	{
-		pc += immediate << 2;
-	}
+    if (!result && Branch & signals)
+        signals |= PCSrc;
 
-	inst_write_back(result);
+    inst_mem_access(result);
 }
 
 /* The memory access stage. */
-void inst_mem_access(void)
+void inst_mem_access(word result)
 {
-	
+    if (signals & MemToReg)
+    {
+        /* Write the data that was retreived from the main memory. */
+    }else
+        inst_write_back(result);
 }
 
 /* The register write back stage. */
 void inst_write_back(word result)
 {
-	if (signals & RegWrite)
-	{
-		if (signals & RegDest)
-			reg_file[rd] = result;
-		else
-			reg_file[rt] = result;
-	}
+    if (signals & PCSrc)
+        pc += immediate << 2;
+    if (signals & RegWrite)
+    {
+        if (signals & RegDest)
+            reg_file[rd] = result;
+        else
+            reg_file[rt] = result;
+    }
 }
