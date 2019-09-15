@@ -12,7 +12,11 @@
 
 void control_unit()
 {
+#ifdef DEBUG
+    printf("control_unit\n");
+#endif
     signals = 0x0;
+    printf("opcode: 0x%0X\n", opcode);
     switch (opcode)
     {
     case R:
@@ -24,11 +28,24 @@ void control_unit()
         signals |= ALUOp0;
         signals |= Branch;
         break;
+    case LW:
+        signals |= ALUSrc;
+        signals |= MemToReg;
+        signals |= RegWrite;
+        signals |= MemRead;
+        break;
+    case SW:
+        signals |= ALUSrc;
+        signals |= MemWrite;
+        break;
     }
 }
 
 byte ALU_control_unit()
 {
+#ifdef DEBUG
+    printf("ALU_control_unit\n");
+#endif
     byte ALUOp = signals & 0x3;
     byte out_signal = 0;
     if (!ALUOp)
@@ -77,27 +94,37 @@ byte ALU_control_unit()
 /* The function that starts the emulation. */
 void emulate(void)
 {
-    printf("Initial register state:\n");
-    dump_regs();
-    printf("\n\n");
+#ifdef DEBUG
+    printf("emulate\n");
+#endif
+    dump_mem(reg_file, REG_SIZE/WORD_SIZE, "Initial State(REGS)");
+    printf("\n");
+    dump_mem((word*)data_mem, DATA_MEM_SIZE/WORD_SIZE, "Initial State(DATA)");
+    printf("\n\n----Exucution----\n\n");
+
     while (pc < INST_MEM_SIZE)
     {
         printf("pc = %d\n", pc);
         inst_fetch();
-        dump_regs();
+        dump_mem(reg_file, REG_SIZE/WORD_SIZE, "Register State");
+        dump_mem((word*)data_mem, DATA_MEM_SIZE/WORD_SIZE, "Memory State");
         sleep(1);
     }
 }
 
 /* Print the contents of the register file.*/
-void dump_regs(void)
+void dump_mem(word* buffer, uint32_t buffer_size, const char* msg)
 {
+#ifdef DEBUG
+    printf("dump_mem\n");
+#endif
     uint32_t i;
-    for (i = 0; i < 32; ++i)
+    printf("----%s----\n", msg);
+    for (i = 0; i < buffer_size; ++i)
     {
         if (i % 4 == 0)
             printf("%d-%d:\t", i,i+3);
-        printf("0x%08X ",reg_file[i]);
+        printf("0x%08X ",buffer[i]);
         if ((i + 1) % 4 == 0)
             printf("\n");
     }
@@ -116,15 +143,21 @@ void dump_regs(void)
 /* The instruction fetch stage. */
 void inst_fetch(void)
 {
+#ifdef DEBUG
+    printf("inst_fetch\n");
+#endif
     word inst = *((word*)(inst_mem + pc));
-    pc += 4;
+    pc += WORD_SIZE;
     inst_decode(inst);
 }
 
 /* The instruction decode stage. */
 void inst_decode(word inst)
 {
-    opcode = inst >> 26;
+#ifdef DEBUG
+    printf("inst_decode\n");
+#endif
+    opcode = ((uint32_t)inst) >> 26;
     rs = (inst >> 21) & 0x1F;
     rt = (inst >> 16) & 0x1F;
     rd = (inst >> 11) & 0x1F;
@@ -149,12 +182,15 @@ void inst_decode(word inst)
 */
 void inst_execute()
 {
+#ifdef DEBUG
+    printf("inst_execute\n");
+#endif
     word result = 0;
     word reg1 = reg_file[rs];
     word reg2;
 
     if (signals & ALUSrc)
-        reg2 = immediate;
+        reg2 = (uint32_t)immediate;
     else
         reg2 = reg_file[rt];
 
@@ -189,16 +225,31 @@ void inst_execute()
 /* The memory access stage. */
 void inst_mem_access(word result)
 {
-    if (signals & MemToReg)
+#ifdef DEBUG
+    printf("inst_mem_access\n");
+#endif
+    word mem_data = 0;
+    if (signals & MemRead)
     {
-        /* Write the data that was retreived from the main memory. */
-    }else
-        inst_write_back(result);
+        /* Load Word */
+        mem_data = *((word*)(data_mem + result));
+    }
+    if (signals & MemWrite)
+    {
+        /* Store Word */
+        *((word*)(data_mem + result)) = reg_file[rt];
+    }
+    if (signals & MemToReg)
+        result = mem_data;
+    inst_write_back(result);
 }
 
 /* The register write back stage. */
 void inst_write_back(word result)
 {
+#ifdef DEBUG
+    printf("inst_write_back\n");
+#endif
     if (signals & PCSrc)
         pc += immediate << 2;
     if (signals & RegWrite)

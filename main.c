@@ -34,6 +34,7 @@ int main(int argc, char **argv)
      *w = 0x1000FFFD;*/
     reg_file[1] = 1;
     reg_file[2] = 5;
+    *((word*)(data_mem + 0)) = 0x123;
     emulate();
 
     fclose(in);

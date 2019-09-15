@@ -61,7 +61,7 @@ static int tokenize(char *str, char delim, char*** tokens)
     return count;
 }
 
-static int get_reg(const char* reg)
+static int8_t get_reg(const char* reg)
 {
     return atoi(reg+2);
 }
@@ -96,11 +96,11 @@ int16_t get_immediate(char* immediate)
     }
     return atoi(immediate);
 }
-
 static int32_t create_R(int8_t opcode, int8_t s, int8_t t,
+                        
                         int8_t d, int8_t shamt, int8_t funct)
 {
-    int32_t inst = 0;
+    uint32_t inst = 0;
     inst = opcode;
 
     inst = inst << 5;
@@ -129,9 +129,9 @@ static int32_t create_R(int8_t opcode, int8_t s, int8_t t,
   of negative numbers as a result of the conversion from 16 to 32 bit int during
   the or operation.
 */
-static int32_t create_BEQ(int8_t opcode, int8_t s, int8_t t, uint16_t immediate)
+static uint32_t create_Immediate(int8_t opcode, int8_t s, int8_t t, uint16_t immediate)
 {
-    int32_t inst = 0;
+    uint32_t inst = 0;
     inst = opcode;
 
     inst = inst << 5;
@@ -148,9 +148,9 @@ static int32_t create_BEQ(int8_t opcode, int8_t s, int8_t t, uint16_t immediate)
     return inst;
 }
 
-static int32_t encode(char** inst, int count)
+static uint32_t encode(char** inst, int count)
 {
-    int32_t dinst = 0;
+    uint32_t dinst = 0;
     if (count != 4)
     {
         fprintf(stderr, "Invalid Instruction(%d)!\n",count);
@@ -190,7 +190,17 @@ static int32_t encode(char** inst, int count)
     {
         if (!check_regs(&inst[1], count-2))
             exit(1);
-        dinst = create_BEQ(0x4, get_reg(inst[1]), get_reg(inst[2]), get_immediate(inst[3]));
+        dinst = create_Immediate(0x4, get_reg(inst[1]), get_reg(inst[2]), get_immediate(inst[3]));
+    }else if (!strcmp(inst[0], "lw") || !strcmp(inst[0], "LW"))
+    {
+        if (!check_regs(&inst[1], 1) || !check_regs(&inst[3], 1))
+            exit(1);
+        dinst = create_Immediate(0x23, get_reg(inst[3]), get_reg(inst[1]), get_immediate(inst[2]));
+    }else if (!strcmp(inst[0], "sw") || !strcmp(inst[0], "SW"))
+    {
+        if (!check_regs(&inst[1], 1) || !check_regs(&inst[3], 1))
+            exit(1);
+        dinst = create_Immediate(0x2B, get_reg(inst[3]), get_reg(inst[1]), get_immediate(inst[2]));
     }
     return dinst;
 }
