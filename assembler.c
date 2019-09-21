@@ -155,8 +155,7 @@ static uint16_t get_immediate(char* immediate)
  * @param shamt The shifting amount
  * @param funct The function code
  */
-static uint32_t create_R(int8_t opcode, int8_t s, int8_t t,
-                        
+static uint32_t create_R(int8_t opcode, int8_t s, int8_t t,                        
                         int8_t d, int8_t shamt, int8_t funct)
 {
     uint32_t inst = 0;
@@ -197,10 +196,8 @@ static uint32_t create_Immediate(uint8_t opcode, uint8_t s, uint8_t t, uint16_t 
     inst = inst << 5;
     inst |= s;
 
-
     inst = inst << 5;
     inst |= t;
-
 
     inst = inst << 16;
     inst |= immediate;

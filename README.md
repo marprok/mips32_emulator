@@ -23,13 +23,13 @@ cycled RISK processor.
 
 ### The assembler program
 
-**This is not a real assembler program**
+**This is not a real assembler program.**
 
 It was created as a tool from the author in order for him to avoid the
 painful(but educational) process of manualy translating operations from
 text to binary.
-The assembly program must contain a sigle instruction per line and
-all the instructions must be of the following type.
+The assembly program must contain a single instruction per line and
+all the instructions must be of the following type:
 
 * inst_name, reg1, reg2, reg3 (for R type instructions)
 * inst_name, reg1, offset, base_address (for LOAD/STORE instructions)
