@@ -4,7 +4,7 @@ This repository contains an implementation of a **non-pipelined MIPS 32** proces
 The emulator supports only a **subset** of the MIPS 32 instruction set and it
 is based on the book **Computer Organization and Design 4th Edition,
 by David A. Patterson and John L. Hennessy(Chapter 4)**. The purpose of this project
-was to get a better understanding of the internals of a non-pipelinged single
+was to get a better understanding of the internals of a non-pipelined single
 cycled RISK processor.
 
 ### Supported Instructions
