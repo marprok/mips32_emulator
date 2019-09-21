@@ -1,16 +1,50 @@
+/**
+ * @file mips32.c
+ * @author Marios Prokopakis
+ * @date 21 Sep 2019
+ * @brief A header file with all necessary declarations for the emulator.
+ *
+ * The implementation of the mips32.h header file.
+ * Read the mips32.h description for more information.
+ */
 #include <stdio.h>
-#include "mips32.h"
 #include <unistd.h>
 #include <stdlib.h>
+#include "mips32.h"
 
-/*
-  A single cycled implementation of a MIPS CPU.
-  All the implementation is based on the single cycled
-  architecture that is presented in chapter 4
-  of the Patterson, Hennessy book of Computer Architecture.
-*/
+int32_t ALU(int32_t reg1, int32_t reg2, byte operation, byte *zero)
+{
+#ifdef DEBUG
+    printf("ALU\n");
+#endif
+    int32_t result = 0;
+    switch (operation)
+    {
+    case 0x2:
+        result = reg1 + reg2;
+        break;
+    case 0x6:
+        result = reg1 - reg2;
+        break;
+    case 0x0:
+        result = reg1 & reg2;
+        break;
+    case 0x1:
+        result = reg1 | reg2;
+        break;
+    case 0x7:
+        result = reg1 < reg2 ? 1 : 0;
+        break;
+    case 0xC:
+        result = ~(reg1 | reg2);
+        break;
+    }
+    if (zero)
+        *zero = result == 0;
+    return result;
+}
 
-void control_unit()
+void control_unit(void)
 {
 #ifdef DEBUG
     printf("control_unit\n");
@@ -41,7 +75,7 @@ void control_unit()
     }
 }
 
-byte ALU_control_unit()
+byte ALU_control_unit(void)
 {
 #ifdef DEBUG
     printf("ALU_control_unit\n");
@@ -50,7 +84,6 @@ byte ALU_control_unit()
     byte out_signal = 0;
     if (!ALUOp)
     {
-        /* TODO memory access */
         out_signal = 0x2;
     }else if (ALUOp & 0x01)
     {
@@ -91,7 +124,6 @@ byte ALU_control_unit()
     return out_signal;
 }
 
-/* The function that starts the emulation. */
 void emulate(void)
 {
 #ifdef DEBUG
@@ -112,7 +144,6 @@ void emulate(void)
     }
 }
 
-/* Print the contents of the register file.*/
 void dump_mem(word* buffer, uint32_t buffer_size, const char* msg)
 {
 #ifdef DEBUG
@@ -130,17 +161,6 @@ void dump_mem(word* buffer, uint32_t buffer_size, const char* msg)
     }
 }
 
-/* Each of the following funtions is mapped to 
-   one of the stages of a clock cycle.
-   These stages are the fillowing:
-   INSTRUCTION FETCH
-   INSTRUCTION DECODE
-   INSTRUCTION EXECUTION
-   INSTRUCTION MEMORY ACCESS
-   REGISTER WRITE BACK
-*/
-
-/* The instruction fetch stage. */
 void inst_fetch(void)
 {
 #ifdef DEBUG
@@ -151,13 +171,12 @@ void inst_fetch(void)
     inst_decode(inst);
 }
 
-/* The instruction decode stage. */
 void inst_decode(word inst)
 {
 #ifdef DEBUG
     printf("inst_decode\n");
 #endif
-    opcode = ((uint32_t)inst) >> 26;
+    opcode = inst >> 26;
     rs = (inst >> 21) & 0x1F;
     rt = (inst >> 16) & 0x1F;
     rd = (inst >> 11) & 0x1F;
@@ -176,53 +195,29 @@ void inst_decode(word inst)
     inst_execute();
 }
 
-/*
-  The instruction execution stage.
-  ALUOp: Patterson, Hennessy chapter 4, page 375
-*/
-void inst_execute()
+void inst_execute(void)
 {
 #ifdef DEBUG
     printf("inst_execute\n");
 #endif
     word result = 0;
-    word reg1 = reg_file[rs];
-    word reg2;
+    int32_t reg1 = reg_file[rs];
+    int32_t reg2;
+    byte zero;
 
     if (signals & ALUSrc)
-        reg2 = (uint32_t)immediate;
+        reg2 = immediate;
     else
         reg2 = reg_file[rt];
 
-    switch (ALU_control_unit())
-    {
-    case 0x2:
-        result = reg1 + reg2;
-        break;
-    case 0x6:
-        result = reg1 - reg2;
-        break;
-    case 0x0:
-        result = reg1 & reg2;
-        break;
-    case 0x1:
-        result = reg1 | reg2;
-        break;
-    case 0x7:
-        result = reg1 < reg2 ? 1 : 0;
-        break;
-    case 0xC:
-        result = ~(reg1 | reg2);
-        break;
-    }
+    result = ALU(reg1, reg2, ALU_control_unit(), &zero);
 
-    if (!result && Branch & signals)
+    if (zero && Branch & signals)
         signals |= PCSrc;
 
     inst_mem_access(result);
 }
 
-/* The memory access stage. */
 void inst_mem_access(word result)
 {
 #ifdef DEBUG
@@ -233,6 +228,7 @@ void inst_mem_access(word result)
     {
         /* Load Word */
         mem_data = *((word*)(data_mem + result));
+        printf("loaded: %d\n", mem_data);
     }
     if (signals & MemWrite)
     {
@@ -244,7 +240,6 @@ void inst_mem_access(word result)
     inst_write_back(result);
 }
 
-/* The register write back stage. */
 void inst_write_back(word result)
 {
 #ifdef DEBUG
@@ -252,6 +247,7 @@ void inst_write_back(word result)
 #endif
     if (signals & PCSrc)
         pc += immediate << 2;
+
     if (signals & RegWrite)
     {
         if (signals & RegDest)

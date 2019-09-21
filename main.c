@@ -1,3 +1,12 @@
+/**
+ * @file main.c
+ * @author Marios Prokopakis
+ * @date 21 Sep 2019
+ * @brief The main function of the emulator program.
+ *
+ * The data memory contents and the register files
+ * are initialized in the main function.
+ */
 #include "mips32.h"
 #include <string.h>
 #include <stdio.h>
@@ -6,19 +15,24 @@
 int main(int argc, char **argv)
 {
     FILE* in = NULL;
+    word inst = 0;
+    word * w;
+
     if (argc != 2)
     {
         printf("./mips bin.mips\n");
         exit(1);
     }
+
     in = fopen(argv[1], "rb");
     if (!in)
     {
         fprintf(stderr, "Cannot open file %s\n", argv[1]);
         exit(1);
     }
-    word inst = 0;
-    word * w = (word*)inst_mem;
+
+    inst = 0;
+    w = (word*)inst_mem;
     while (fread(&inst, sizeof(inst), 1, in))
     {
         *w = inst;
@@ -26,15 +40,10 @@ int main(int argc, char **argv)
         w++;
     }
     
-    /*word * w = (word*)inst_mem;
-     *w = 0x10050001;
-     reg_file[5] = 0x0;
-     reg_file[15] = 0xFF;
-     w = (word*)(inst_mem + 12);
-     *w = 0x1000FFFD;*/
     reg_file[1] = 1;
     reg_file[2] = 5;
-    *((word*)(data_mem + 0)) = 0x123;
+    *((word*)(data_mem + 0)) = -123;
+
     emulate();
 
     fclose(in);
