@@ -2,7 +2,7 @@
  * @file mips32.h
  * @author Marios Prokopakis
  * @date 21 Sep 2019
- * @brief A header file with all necessary declarations for the emulator.
+ * @brief A header file with all the necessary declarations for the emulator.
  *
  * This Program emulates a non-pipelined, single cycled MIPS32 processor.
  * The current implementation supports only a subset of the instructions

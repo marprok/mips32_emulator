@@ -19,82 +19,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
 #include <stdint.h>
+#include "tokenizer.h"
 
-/**
- * Remove all leading and trailing whitespaces from the
- * input string.
- * @param str Input/Output string
- */
-static void trim(char** str)
-{
-    int i = strlen(*str) - 1;
-    while (i >= 0 && isspace((*str)[i]))
-    {
-        (*str)[i] = '\0';
-        i--;
-    }
-    while (isspace(**str))
-        (*str)++;
-}
-/**
- * This function splits str into a bucket of tokens
- * according to a delimeter. If tokens is NULL, then
- * the function allocates memory to it. If it is not
- * NULL, then the contents are fread and the correct
- * amount of memory is allocated.
- * DO NOT PASS A POINTER TO A STATICLY ALLOCATED BUFFER
- * @param str The string to be split
- * @param delim The delimeter character
- * @param tokens The output bucket of tokens
- * @param zero Output variable that is set if the result is zero
- */
-static int tokenize(char *str, char delim, char*** tokens)
-{
-    int count = 1;
-    int i = 0;
-    char *pointer = str;
-    char *token = NULL;
-    /* Count the tokens. */
-    while (*pointer)
-    {
-        if (*pointer == delim)
-            count++;
-        pointer++;
-    }
-    
-    if (tokens)
-    {
-        if (*tokens)
-            free(*tokens);
-        *tokens = (char**)malloc(count*sizeof(char*));
-    }else
-    {
-        return -1;
-    }
-
-    pointer = str;
-    token = str;
-
-    while (count != 1 && *pointer)
-    {
-        if (*pointer == delim)
-        {
-            *pointer = '\0';
-            trim(&token);
-            (*tokens)[i] = token;
-            token = pointer + 1;
-            i++;
-        }
-        pointer++;
-    }
-
-    trim(&token);
-    (*tokens)[i] = token;
-    
-    return count;
-}
 /**
  * This function returns the index of a register.
  * All registers must be in the form of $index
@@ -275,7 +202,6 @@ int main(int argc, char **argv)
     char *inst = NULL;
     size_t len;
     ssize_t nread;
-    int count;
     int32_t result;
     const char* bin = "bin.mips";
 
@@ -298,19 +224,19 @@ int main(int argc, char **argv)
         fprintf(stderr, "Cannot open file %s\n", argv[1]);
         exit(1);
     }
-    
+    bucket_t bucket;
     while ((nread = getline(&inst, &len, in)) > 0)
     {
         printf("line: %s", inst);
-        count = tokenize(inst, ',', &tokens);
-        if (count < 0)
+        if (!create_bucket(&bucket, inst, ","))
         {
             fprintf(stderr, "Error while tokenizing the command %s\n", inst);
             exit(1);
         }
-        result = encode(tokens, count);
+        result = encode(bucket.m_bucket, (int)bucket.m_size);
         printf("0x%08X\n", result);
         fwrite(&result, sizeof(result), 1, out);
+        reset_bucket(&bucket);
     }
     /* Cleanup */
     if (tokens)
